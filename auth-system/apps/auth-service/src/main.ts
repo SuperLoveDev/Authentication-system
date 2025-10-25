@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { errorMiddleware } from "../../../packages/error-handler/errorMiddleware";
 
 const app = express();
 
@@ -17,6 +18,9 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send({ message: "You gonna make it" });
 });
+
+app.use(errorMiddleware);
+
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
   console.log(`Auth service is running at http://localhost:${port}/api`);
