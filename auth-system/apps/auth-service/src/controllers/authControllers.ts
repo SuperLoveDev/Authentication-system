@@ -1,13 +1,18 @@
 import { NextFunction, Request, Response } from "express";
 import {
   checkOtpRestriction,
+  otpVerification,
   sendOtp,
   trackOtpRestriction,
   validateUserData,
 } from "../utils/authHelper";
 import prisma from "../../../../packages/libs/Prisma";
-import { ValidationError } from "../../../../packages/error-handler";
+import { AuthError, ValidationError } from "../../../../packages/error-handler";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { setCookie } from "../utils/cookie";
 
+// register user
 export const userRegistration = async (
   req: Request,
   res: Response,
@@ -35,6 +40,7 @@ export const userRegistration = async (
   }
 };
 
+// verify user
 export const verfiyUser = async (
   req: Request,
   res: Response,
@@ -52,7 +58,73 @@ export const verfiyUser = async (
     }
 
     // otp verification
-    await otpVerification();
+    await otpVerification(email, otp, next);
+
+    // hashed the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.create({
+      data: { name, email, password: hashedPassword },
+    });
+    res.status(201).json({
+      success: true,
+      message: "User created succesfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// login user
+export const loginUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return next(new ValidationError("Email and password are required"));
+    }
+
+    // verifying the user email
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return next(new AuthError("User does not exist"));
+    }
+
+    // verifying the user password
+    const isMatching = await bcrypt.compare(password, user.password);
+    if (!isMatching) {
+      return next(new ValidationError("Invalid email or password"));
+    }
+
+    // providing an access and refresh token to the user
+    const accessToken = jwt.sign(
+      { id: user.id },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user.id },
+      process.env.REFRESH_TOKEN_SECRET as string,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    // storing the access and refesh token in an httponly
+    setCookie(res, "access-token", accessToken);
+    setCookie(res, "refresh-token", refreshToken);
+
+    res.status(200).json({
+      message: "Login successfully",
+      user,
+    });
   } catch (error) {
     return next(error);
   }

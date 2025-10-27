@@ -88,5 +88,23 @@ export const otpVerification = async (
   }
 
   const failedAttemptsKey = `otp_attempts:${email}`;
-  const failedAttempts = parseInt();
+  const failedAttempts = parseInt((await redis.get(failedAttemptsKey)) || "0");
+
+  if (storedOtp !== otp) {
+    if (failedAttempts > 2) {
+      await redis.set(`otp_lock:${email}`, "lock", "EX", 1800);
+      await redis.del(`otp:${email}`, failedAttemptsKey);
+      return next(
+        new ValidationError(
+          "Your account is locked, please try again after 30m"
+        )
+      );
+    }
+    await redis.set(failedAttemptsKey, failedAttempts + 1, "EX", 300);
+    return next(
+      new ValidationError(`Incorrect OTP ${2 - failedAttempts} attempts left`)
+    );
+  }
+
+  await redis.del(`otp:${email}`, failedAttemptsKey);
 };

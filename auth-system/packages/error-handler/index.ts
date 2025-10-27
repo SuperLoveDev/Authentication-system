@@ -31,6 +31,12 @@ export class ValidationError extends AppError {
   }
 }
 
+export class AuthError extends AppError {
+  constructor(message: string) {
+    super(message, 401);
+  }
+}
+
 // database error
 export class DatabaseError extends AppError {
   constructor(messgae: "Data-base error") {
