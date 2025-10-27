@@ -1,8 +1,9 @@
 import crypto from "crypto";
-import { NextFunction } from "express";
+import { NextFunction, Response, Request } from "express";
 import { ValidationError } from "../../../../packages/error-handler";
 import redis from "../../../../packages/libs/Redis";
 import { sendEmail } from "../../../../packages/sendMail";
+import prisma from "../../../../packages/libs/Prisma";
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -64,7 +65,7 @@ export const trackOtpRestriction = async (
   }
 };
 
-// Send an email
+// Send otp
 export const sendOtp = async (
   name: string,
   email: string,
@@ -107,4 +108,35 @@ export const otpVerification = async (
   }
 
   await redis.del(`otp:${email}`, failedAttemptsKey);
+};
+
+// handle forgot user password
+export const handleForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return next(new ValidationError("Email is required"));
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (!existingUser) {
+      return next(new ValidationError("No account associated with this email"));
+    }
+
+    await checkOtpRestriction(email, next);
+    await trackOtpRestriction(email, next);
+
+    // generate and send otp
+    await sendOtp(existingUser.name, email, "user-forgotpassword-mail");
+
+    res
+      .status(200)
+      .json({ success: true, message: "OTP sent, Please verify your email" });
+  } catch (error) {
+    return next(error);
+  }
 };

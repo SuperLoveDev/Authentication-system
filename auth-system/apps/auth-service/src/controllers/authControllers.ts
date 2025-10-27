@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import {
   checkOtpRestriction,
+  handleForgotPassword,
   otpVerification,
   sendOtp,
   trackOtpRestriction,
@@ -129,3 +130,33 @@ export const loginUser = async (
     return next(error);
   }
 };
+
+// user forgot password
+export const userForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  await handleForgotPassword(req, res, next);
+};
+
+// export const refreshAccessToken = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     const refreshToken = req.cookies;
+//     if (!refreshToken) {
+//       return next(new ValidationError("No refresh token "));
+//     }
+
+//     // generating new access token
+//     const newAccessToken = jwt.verify(
+//       refreshToken,
+//       process.env.REFESH_ACCESS_TOKEN as string
+//     );
+//   } catch (error) {
+//     return next(error);
+//   }
+// };
