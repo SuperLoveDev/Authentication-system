@@ -6,6 +6,7 @@ import {
   sendOtp,
   trackOtpRestriction,
   validateUserData,
+  verifyForgotPasswordOtp,
 } from "../utils/authHelper";
 import prisma from "../../../../packages/libs/Prisma";
 import { AuthError, ValidationError } from "../../../../packages/error-handler";
@@ -131,15 +132,6 @@ export const loginUser = async (
   }
 };
 
-// user forgot password
-export const userForgotPassword = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  await handleForgotPassword(req, res, next);
-};
-
 // export const refreshAccessToken = async (
 //   req: Request,
 //   res: Response,
@@ -160,3 +152,63 @@ export const userForgotPassword = async (
 //     return next(error);
 //   }
 // };
+
+// user forgot password
+export const userForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  await handleForgotPassword(req, res, next);
+};
+
+//verify forgot pâssword otp
+export const verifyUserForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  await verifyForgotPasswordOtp(req, res, next);
+};
+
+export const resetUserPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return next(new ValidationError("Email and password are required"));
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return next(new ValidationError("No user found with this email"));
+    }
+
+    // comparing the password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return next(
+        new ValidationError("The password can not be the same as the old one")
+      );
+    }
+
+    //hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    //updating the user password in
+    await prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword },
+    });
+
+    res.status(200).json({
+      messsage: "password reset succesfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
