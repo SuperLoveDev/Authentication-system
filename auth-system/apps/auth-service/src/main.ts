@@ -21,7 +21,7 @@ app.get("/", (req, res) => {
 
 app.use(errorMiddleware);
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 const server = app.listen(port, () => {
   console.log(`Auth service is running at http://localhost:${port}/api`);
 });
