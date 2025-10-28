@@ -14,7 +14,7 @@ export const validateUserData = async (data: any) => {
     throw new ValidationError("All fields are required");
   }
 
-  if (emailRegex.test(email)) {
+  if (!emailRegex.test(email)) {
     throw new ValidationError("email format not valid");
   }
 };
@@ -38,7 +38,7 @@ export const checkOtpRestriction = async (
     );
   }
 
-  if (await redis.get(`otp_cooldown: ${email}`)) {
+  if (await redis.get(`otp_cooldown:${email}`)) {
     return next(
       new ValidationError("Please wait a minute before request a new otp")
     );
