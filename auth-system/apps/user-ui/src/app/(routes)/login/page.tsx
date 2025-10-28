@@ -5,11 +5,11 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 
-type FormData = {
-  name: string;
-  email: string;
-  password: string;
-};
+// type FormData = {
+//   name: string;
+//   email: string;
+//   password: string;
+// };
 
 const Page = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -20,9 +20,9 @@ const Page = () => {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>();
+  } = useForm();
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = (data: any) => {
     console.log(data);
   };
 
@@ -31,20 +31,6 @@ const Page = () => {
       <div className="w-[320px] sm:w-[450px] mt-10">
         {/* form */}
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div>
-            <Input
-              type="text"
-              label="Name"
-              placeholder="John Monreo"
-              {...register("name", {
-                required: "Name is required",
-              })}
-            />
-            {errors.name && (
-              <p className="text-red-500">{String(errors.name.message)}</p>
-            )}
-          </div>
-
           <div className="mt-4">
             <Input
               type="text"
@@ -89,16 +75,16 @@ const Page = () => {
             className="mt-10 text-gray-300 bg-purple-700 flex items-center justify-center w-full p-4 rounded-lg hover:bg-purple-900"
             type="submit"
           >
-            Create my Account
+            LogIn
           </button>
         </form>
 
         <div className="mt-4 flex justify-end items-center gap-2">
           <p className="text-gray-400 text-base sm:text-xl">
-            Already have an account ?
+            You don't have an account ?
           </p>
           <p className="text-purple-400 font-medium text-base">
-            <Link href={"/login"}>Login here</Link>
+            <Link href={"/"}>Register here</Link>
           </p>
         </div>
       </div>
