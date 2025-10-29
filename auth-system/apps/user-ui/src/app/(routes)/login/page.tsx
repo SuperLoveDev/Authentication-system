@@ -1,7 +1,10 @@
 "use client";
 import Input from "@/shared/components/globalInput";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -13,6 +16,8 @@ import { useForm } from "react-hook-form";
 
 const Page = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const router = useRouter();
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -22,8 +27,32 @@ const Page = () => {
     formState: { errors },
   } = useForm();
 
+  // login mutation function
+  const loginMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/login-user`,
+        data,
+        { withCredentials: true }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setErrorMessage(null);
+      router.push("/content");
+    },
+    onError: (error) => {
+      console.error("Login failed:", error);
+
+      if (axios.isAxiosError(error)) {
+        const serverMessage = error.response?.data?.message;
+        setErrorMessage(serverMessage || "Login failed. Please try again.");
+      }
+    },
+  });
+
   const onSubmit = (data: any) => {
-    console.log(data);
+    loginMutation.mutate(data);
   };
 
   return (
@@ -69,24 +98,26 @@ const Page = () => {
             >
               {passwordVisible ? <Eye /> : <EyeOff />}
             </button>
+
+            {errorMessage && (
+              <p className="text-red-500 text-sm mt-2 italic">{errorMessage}</p>
+            )}
+          </div>
+
+          <div className="mt-4 flex justify-end items-center gap-2">
+            <p className="text-purple-400 font-medium text-base">
+              <Link href={"/forgot-password"}>Forgot-Password</Link>
+            </p>
           </div>
 
           <button
+            disabled={loginMutation.isPending}
             className="mt-10 text-gray-300 bg-purple-700 flex items-center justify-center w-full p-4 rounded-lg hover:bg-purple-900"
             type="submit"
           >
-            LogIn
+            {loginMutation?.isPending ? "Login in ..." : "Login"}
           </button>
         </form>
-
-        <div className="mt-4 flex justify-end items-center gap-2">
-          <p className="text-gray-400 text-base sm:text-xl">
-            You don't have an account ?
-          </p>
-          <p className="text-purple-400 font-medium text-base">
-            <Link href={"/"}>Register here</Link>
-          </p>
-        </div>
       </div>
     </div>
   );

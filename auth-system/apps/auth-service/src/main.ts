@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { errorMiddleware } from "../../../packages/error-handler/errorMiddleware";
+import router from "./routes/router";
 
 const app = express();
 
@@ -12,13 +13,17 @@ app.use(
     credentials: true,
   })
 );
-app.use(cookieParser());
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.send({ message: "You gonna make it" });
 });
 
+// auth route / endpoint
+app.use("/api", router);
+
+// error middleware
 app.use(errorMiddleware);
 
 const port = process.env.PORT || 4000;

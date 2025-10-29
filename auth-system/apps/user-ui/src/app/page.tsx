@@ -17,7 +17,7 @@ type FormData = {
 const Page = () => {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [userData, setUserData] = useState<FormData | null>(null);
-  const [showOtp, setShowOtp] = useState(true);
+  const [showOtp, setShowOtp] = useState(false);
   const [canResend, setCanResend] = useState(true);
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [timer, setTimer] = useState(60);
@@ -57,12 +57,30 @@ const Page = () => {
     onSuccess: (_, formData) => {
       setUserData(formData);
       setShowOtp(true);
-      setCanResend(true);
+      setCanResend(false);
       setTimer(60);
       startResendTimer();
     },
     onError: (error) => {
       console.error("Registration failed:", error);
+    },
+  });
+
+  // OTP verification mutation
+  const otpVerificationMutation = useMutation({
+    mutationFn: async () => {
+      if (!userData) return;
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/verify-user`,
+        {
+          ...userData,
+          otp: otp.join(""),
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      router.push("/login");
     },
   });
 
@@ -85,6 +103,12 @@ const Page = () => {
 
   const onSubmit = (data: FormData) => {
     registerMutation.mutate(data);
+  };
+
+  // resend otp function
+  const resendOtp = () => {
+    setCanResend(false);
+    setTimer(60);
   };
 
   return (
@@ -187,11 +211,25 @@ const Page = () => {
             </div>
 
             <button
+              disabled={otpVerificationMutation.isPending}
+              onClick={() => otpVerificationMutation.mutate()}
               className="text-xl w-full mt-2 bg-purple-700 hover:bg-purple-900 text-gray-300 text-center p-2 rounded-lg cursor-pointer"
-              type="submit"
             >
-              Verify OTP
+              {otpVerificationMutation.isPending
+                ? "Verifying..."
+                : "Verify OTP"}
             </button>
+
+            {canResend ? (
+              <p
+                className="text-white font-bold cursor-pointer"
+                onClick={resendOtp}
+              >
+                Resend OTP
+              </p>
+            ) : (
+              `Resend OTP in ${timer}s`
+            )}
           </div>
         )}
       </div>
