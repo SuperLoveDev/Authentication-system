@@ -1,5 +1,6 @@
 import Header from "@/shared/widgets/header";
 import "./global.css";
+import Providers from "./providers";
 
 export const metadata = {
   title: "Welcome to user-ui",
@@ -14,8 +15,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-slate-800 sm:px-[5vw] md:px-[7vw] lg:px-[9vw] mx-auto my-10">
-        <Header />
-        {children}
+        <Providers>
+          <Header />
+          {children}
+        </Providers>
       </body>
     </html>
   );
