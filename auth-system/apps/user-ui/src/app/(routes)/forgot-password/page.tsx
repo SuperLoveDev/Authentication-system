@@ -2,22 +2,20 @@
 import Input from "@/shared/components/globalInput";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 
 type FormData = {
-  name: string;
   email: string;
   password: string;
 };
 
 const Page = () => {
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [userData, setUserData] = useState<FormData | null>(null);
-  const [showOtp, setShowOtp] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [step, setStep] = useState<"email" | "otp" | "reset">("email");
+  const [errorMessage, setErrorMessage] = useState(null);
   const [canResend, setCanResend] = useState(true);
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [timer, setTimer] = useState(60);
@@ -46,41 +44,79 @@ const Page = () => {
     }, 1000);
   };
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+  const requestOtpMutation = useMutation({
+    mutationFn: async ({ email }: { email: string }) => {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/user-registration`,
-        data
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/user-forgot-password`,
+        { email }
       );
       return response.data;
     },
-    onSuccess: (_, formData) => {
-      setUserData(formData);
-      setShowOtp(true);
+    onSuccess: (_, { email }) => {
+      setUserEmail(email);
+      setStep("otp");
+      setErrorMessage(null);
       setCanResend(false);
       setTimer(60);
       startResendTimer();
     },
     onError: (error) => {
       console.error("Registration failed:", error);
+      if (axios.isAxiosError(error)) {
+        const serverMessage = error.response?.data?.message;
+        setErrorMessage(serverMessage || "Failed to send OTP");
+      }
     },
   });
 
   // OTP verification mutation
   const otpVerificationMutation = useMutation({
     mutationFn: async () => {
-      if (!userData) return;
+      if (!userEmail) return;
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/verify-user`,
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/verify-user-forgot-password`,
         {
-          ...userData,
+          email: userEmail,
           otp: otp.join(""),
         }
       );
       return response.data;
     },
     onSuccess: () => {
+      setStep("reset");
+      setErrorMessage(null);
+    },
+    onError: (error) => {
+      console.error("Otp Error:", error);
+      if (axios.isAxiosError(error)) {
+        const serverMessage = error.response?.data?.message;
+        setErrorMessage(serverMessage || "OTP verification failed");
+      }
+    },
+  });
+
+  // reset mutation function
+  const resetMutation = useMutation({
+    mutationFn: async ({ password }: { password: string }) => {
+      if (!password) return;
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_SERVER_URI}/api/reset-user-password`,
+        { email: userEmail, newPassword: password }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      setStep("email");
+      toast.success("Password reset successfully");
+      setErrorMessage(null);
       router.push("/login");
+    },
+    onError: (error) => {
+      console.log("password reset:", error);
+      if (axios.isAxiosError(error)) {
+        const serverMessage = error.response?.data?.message;
+        setErrorMessage(serverMessage || "Password reset failed");
+      }
     },
   });
 
@@ -101,38 +137,32 @@ const Page = () => {
     }
   };
 
-  const onSubmit = (data: FormData) => {
-    registerMutation.mutate(data);
+  // function to collect the email data
+  const onSubmitEmail = ({ email }: { email: string }) => {
+    requestOtpMutation.mutate({ email });
+  };
+
+  // function to reset the password
+  const onSubmitPassword = ({ password }: { password: string }) => {
+    resetMutation.mutate({ password });
   };
 
   // resend otp function
   const resendOtp = () => {
-    if (userData) {
-      registerMutation.mutate(userData);
-    }
+    setCanResend(false);
+    setTimer(60);
   };
 
   return (
     <div className="w-full flex justify-center items-center">
       <div className="w-[320px] sm:w-[450px] mt-10">
         {/* form */}
-        {!showOtp ? (
+        {step === "email" && (
           <>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div>
-                <Input
-                  type="text"
-                  label="Name"
-                  placeholder="John Monreo"
-                  {...register("name", {
-                    required: "Name is required",
-                  })}
-                />
-                {errors.name && (
-                  <p className="text-red-500">{String(errors.name.message)}</p>
-                )}
-              </div>
-
+            <form onSubmit={handleSubmit(onSubmitEmail)}>
+              <h2 className="text-gray-300 text-3xl text-center mb-5">
+                Home . Forgot password
+              </h2>
               <div className="mt-4">
                 <Input
                   type="text"
@@ -149,50 +179,22 @@ const Page = () => {
                 {errors.email && (
                   <p className="text-red-500">{String(errors.email.message)}</p>
                 )}
-              </div>
 
-              <div className="mt-4 relative">
-                <Input
-                  type={passwordVisible ? "text" : "password"}
-                  label="Password"
-                  placeholder="*******"
-                  {...register("password", {
-                    required: "Password is required",
-                  })}
-                />
-                {errors.password && (
-                  <p className="text-red-500">
-                    {String(errors.password.message)}
-                  </p>
-                )}
-
-                <button
-                  onClick={() => setPasswordVisible(!passwordVisible)}
-                  type="button"
-                  className="absolute top-10 right-5"
-                >
-                  {passwordVisible ? <Eye /> : <EyeOff />}
-                </button>
+                {errorMessage && <p className="text-red-500">{errorMessage}</p>}
               </div>
 
               <button
                 className="mt-10 text-gray-300 bg-purple-700 flex items-center justify-center w-full p-4 rounded-lg hover:bg-purple-900"
                 type="submit"
+                disabled={requestOtpMutation.isPending}
               >
-                Create my Account
+                {requestOtpMutation.isPending ? "Sending OTP" : "Submit"}
               </button>
             </form>
-
-            <div className="mt-4 flex justify-end items-center gap-2">
-              <p className="text-gray-400 text-base sm:text-xl">
-                Already have an account ?
-              </p>
-              <p className="text-purple-400 font-medium text-base">
-                <Link href={"/login"}>Login here</Link>
-              </p>
-            </div>
           </>
-        ) : (
+        )}
+
+        {step === "otp" && (
           <div className="flex flex-col items-center gap-4">
             <h1 className="text-xl text-gray-300">Enter your OTP code</h1>
             <div className="flex justify-center gap-5  border-1 border-purple-600">
@@ -232,6 +234,45 @@ const Page = () => {
               `Resend OTP in ${timer}s`
             )}
           </div>
+        )}
+
+        {step === "reset" && (
+          <>
+            <form onSubmit={handleSubmit(onSubmitPassword)}>
+              <h2 className="text-gray-300 text-3xl text-center mb-5">
+                Home . Reset password
+              </h2>
+              <div className="mt-4">
+                <Input
+                  type="text"
+                  label="Reset password"
+                  placeholder="******"
+                  {...register("password", {
+                    required: "your new password is required",
+                    minLength: {
+                      value: 6,
+                      message: "Your new password must be atleast 6 charaxter",
+                    },
+                  })}
+                />
+                {errors.password && (
+                  <p className="text-red-500">
+                    {String(errors.password.message)}
+                  </p>
+                )}
+              </div>
+
+              {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+
+              <button
+                className="mt-10 text-gray-300 bg-purple-700 flex items-center justify-center w-full p-4 rounded-lg hover:bg-purple-900"
+                type="submit"
+                disabled={resetMutation.isPending}
+              >
+                {resetMutation.isPending ? "resetting password" : "Submit"}
+              </button>
+            </form>
+          </>
         )}
       </div>
     </div>

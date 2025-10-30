@@ -29,7 +29,8 @@
     "prisma": "^6.18.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.65.0"
+    "react-hook-form": "^7.65.0",
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@nx/esbuild": "22.0.1",
