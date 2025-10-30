@@ -1,41 +1,49 @@
 # Authentication-system
 
-A full stack Secure user authentication platform featuring registration, login, password reset, and OTP verification.”
+A full stack Secure user authentication platform featuring registration, login, password reset,logout, and OTP verification.”
 
-# Features
+# Endpoint Description
 
-User registration (/register)
-Login (/login) with JWT
-Logout (/logout)
-Forgot password (/forgot-password)
-Password reset (/reset-password)
-OTP verification for email or phone
-Temporary OTP storage with Redis
-Token refresh (/refresh-token)
-User profile retrieval (/me)
-Secure password hashing with bcrypt
-Middleware for authentication & request validation
-Rate limiting for endpoint protection
-Centralized error handling with AppError
+POST /api/user-registration Register new user with OTP Verification
+POST /api/verify-user Verify user OTP
+POST /api/login-user User login
+POST /api/logout-user User logout
+POST /api/user-forgot-password Password reset request with OTP rate limit
+POST /api/verify-user-forgot-password Verify reset OTP
+POST /api/reset-user-password complete password reset
 
-Endpoint Description
+### **Frontend**
 
-/register POST Create a newuser  
-/login POST Login with email/password
-/logout POST Logout
-/forgot-password POST Request password reset  
-/reset-password POST Reset password using token
-/verify-otp POST OTP verification  
-/refresh-token POST Refresh JWT token
+- **Next.js 14** with App Router
+- **TypeScript** for type safety
+- **React Hook Form** for form management
+- **TanStack Query** for server state
+- **Tailwind CSS** for styling
+- **Lucide React** for icons
+- **Axios** for HTTP requests
 
-# Tech Stack
+### **Backend**
 
-Backend: Node.js, TypeScript, Express
-Database: Mongodb via Prisma ORM
-Auth: JWT & bcrypt
-Caching: Redis (OTP/session)
-Frontend: React / Next.js
-Architecture: Monorepo
+- **Node.js** with Express.js
+- **TypeScript** development
+- **Prisma ORM** with MongoDB
+- **Redis** for OTP storage and rate limiting
+- **JWT** for authentication
+- **Bcrypt** for password hashing
+- **Nodemailer** for email services
+- **EJS** for email templates
+
+# Utilities
+
+https://img.shields.io/badge/JWT-Auth-purple?style=for-the-badge&logo=jsonwebtokens
+
+https://img.shields.io/badge/Bcrypt-5.0-yellow?style=for-the-badge
+
+https://img.shields.io/badge/Nodemailer-6.0-blue?style=for-the-badge
+
+https://img.shields.io/badge/EJS-Templates-orange?style=for-the-badge
+
+https://img.shields.io/badge/Rate_Limiting-Enabled-red?style=for-the-badge
 
 # clone my repo
 

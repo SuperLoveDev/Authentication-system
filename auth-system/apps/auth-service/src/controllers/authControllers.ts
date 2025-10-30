@@ -221,7 +221,7 @@ export const logoutUser = async (
   next: NextFunction
 ) => {
   try {
-    res.clearCookie("acess-token");
+    res.clearCookie("access-token");
     res.clearCookie("refresh-token");
 
     res.status(200).json({
