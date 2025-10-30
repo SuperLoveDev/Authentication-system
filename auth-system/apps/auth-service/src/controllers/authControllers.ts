@@ -162,7 +162,7 @@ export const userForgotPassword = async (
   await handleForgotPassword(req, res, next);
 };
 
-//verify forgot pâssword otp
+// verify forgot pâssword otp
 export const verifyUserForgotPassword = async (
   req: Request,
   res: Response,
@@ -171,6 +171,7 @@ export const verifyUserForgotPassword = async (
   await verifyForgotPasswordOtp(req, res, next);
 };
 
+// reset password
 export const resetUserPassword = async (
   req: Request,
   res: Response,
@@ -207,6 +208,25 @@ export const resetUserPassword = async (
 
     res.status(200).json({
       messsage: "password reset succesfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// user logout
+export const logoutUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    res.clearCookie("acess-token");
+    res.clearCookie("refresh-token");
+
+    res.status(200).json({
+      success: true,
+      message: "User deconnected successfully",
     });
   } catch (error) {
     return next(error);

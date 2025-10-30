@@ -1,6 +1,7 @@
 import Header from "@/shared/widgets/header";
 import "./global.css";
 import Providers from "./providers";
+import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "User ui",
@@ -18,6 +19,7 @@ export default function RootLayout({
         <Providers>
           <Header />
           {children}
+          <Toaster position="top-center" reverseOrder={false} />
         </Providers>
       </body>
     </html>
