@@ -21,7 +21,7 @@ const Content = () => {
       }
     };
     window.addEventListener("scroll", handleScroll);
-    return () => removeEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // logout mutation function
